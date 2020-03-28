@@ -111,9 +111,9 @@ void brew_tea(){
 		//set by loading/changing value in OCR0A register.
 
 	OCR0A = 0xFF; // set full duty cycle
-	PORTB = 1<<PORTB4;
+	PORTB = 1<<PORTB4; // turn on motor
 	wait(delay, 2); // wait
-	PORTB = 0<<PORTB4;
+	PORTB = 0<<PORTB4; // turn off motor
 	OCR0A = 0x00; // clear duty cycle
 
 	cue_finish();
