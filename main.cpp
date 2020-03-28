@@ -9,6 +9,7 @@ void ISR(INT0_vect);
 void monitor_pump();
 void brew_tea();
 void init_ADC();
+void cue_finish();
 
 char WATER_TEMP = 0;
 char TEA_STRENGTH = 0;
@@ -21,6 +22,7 @@ int main(void) {
 
 	// define all Port C bits as input
 	DDRC = 0x00; 
+
 
 	EICRA = 1<<ISC11 | 1<<ISC10 | 1<<ISC01 | 0<<ISC00;
 	EIMSK = 1<<INT1 | 1<<INT0; 
@@ -110,6 +112,13 @@ void brew_tea(){
 	PORTD = 0<<PORTD0 | 0<<PORTD1; // turn off motor
 	OCR0A = 0x00; // clear duty cycle
 
+	cue_finish();
+
+}
+
+void cue_finish(){
+
+	// TODO: Speaker and LED to show tea is done
 
 }
 
