@@ -26,23 +26,15 @@ int main(void) {
 	//PORTB output
 	DDRB = DDRB & 00000011;
 
-
-
 	EICRA = 1<<ISC11 | 1<<ISC10 | 1<<ISC01 | 0<<ISC00;
 	EIMSK = 1<<INT1 | 1<<INT0; 
 	sei();
 	init_ADC();
 
 	while(1){
-
 		// TODO: while pressure sensor not triggered, do nothing
 		// TODO: when pressure sensor triggered, go to ISR
-
-
 	}
-
-
-
 	return 0;
 
 }
@@ -65,15 +57,12 @@ void monitor_pump(){
 	// turn some yellow LED on
 	// monitor the voltage coming from thermocouple
 	// when it's close to WATER_TEMP, make LED green and start pump
-
 	// TODO: Need to figure out how to make ADC from ADC1 because ADC0 is being used by brew_tea()
-
 	brew_tea();
 }
 
 void brew_tea(){
 	ADMUX = 0<<REFS1 | 1<<REFS0 | 1<<ADLAR; 
-
 	ADCSRA |= (1<<ADSC); // Start conversion
 	while ((ADCSRA & (1<<ADIF)) ==0); // wait for conversion to finish
 	TEA_STRENGTH = ADCH;
@@ -100,15 +89,9 @@ void brew_tea(){
 		delay = 300000;
 
 	}
-
-	OCR0A = 0x00; // Load $00 into OCR0 to set initial duty cycle to 0 (motor off)
-	TCCR0A = 1<<COM0A1 | 1<<COM0A0 | 1<<WGM01 | 1<<WGM00; // Set non‐inverting
-		//mode on OC0A pin (COMA1:0 = 10; Fast PWM (WGM1:0 bits = bits 1:0 = 11) (Note
-		//that we are not affecting OC0B because COMB0:1 bits stay at default = 00)
-	TCCR0B = 0<<CS02 | 1<<CS01 | 1<<CS00; // Set base PWM frequency (CS02:0 ‐ bits
-		//2‐0 = 011 for prescaler of 64, for approximately 1kHz base frequency)
-		// PWM is now running on selected pin at selected base frequency. Duty cycle is
-		//set by loading/changing value in OCR0A register.
+	OCR0A = 0x00; 
+	TCCR0A = 1<<COM0A1 | 1<<COM0A0 | 1<<WGM01 | 1<<WGM00; 
+	TCCR0B = 0<<CS02 | 1<<CS01 | 1<<CS00;
 
 	OCR0A = 0xFF; // set full duty cycle
 	PORTB = 1<<PORTB4; // turn on motor
@@ -121,9 +104,7 @@ void brew_tea(){
 }
 
 void cue_finish(){
-
 	// TODO: Speaker and LED to show tea is done
-
 }
 
 void wait(volatile int multiple, volatile char time_choice){
