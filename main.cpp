@@ -6,11 +6,12 @@
 void wait(volatile int multiple, volatile char time_choice);
 void delay_T_msec_timer0(char choice);
 void ISR(INT0_vect);
-void read_poteniometers();
 void monitor_pump();
+void brew_tea();
+void init_ADC();
 
-int WATER_TEMP = 0;
-int TEA_STRENGTH = 0;
+char WATER_TEMP = 0;
+char TEA_STRENGTH = 0;
 
 
 int main(void) {
@@ -21,20 +22,15 @@ int main(void) {
 	// define all Port C bits as input
 	DDRC = 0x00; 
 
-	// clear Power Reduction ADC bit (0) in PRR register
-	PRR = 0x00; 
-
-	// Set ADC Enable bit (7) in ADCSRA register, and set ADC prescaler to 128 (bits 2‐0 of ADCSRA = ADPS2‐ADPS0 = 111)
-	ADCSRA = 1<<ADEN | 1<<ADPS2 | 1<<ADPS1 | 1<<ADPS0;
-
-	// select Analog Reference voltage to be AVcc (bits 7‐6 of ADMUX = 01)
-	ADMUX = 0<<REFS1 | 1<<REFS0 | 1<<ADLAR; 
-
 	EICRA = 1<<ISC11 | 1<<ISC10 | 1<<ISC01 | 0<<ISC00;
 	EIMSK = 1<<INT1 | 1<<INT0; 
 	sei();
+	init_ADC();
 
 	while(1){
+
+		// TODO: while pressure sensor not triggered, do nothing
+		// TODO: when pressure sensor triggered, go to ISR
 
 
 	}
@@ -45,18 +41,18 @@ int main(void) {
 
 }
 
-ISR(INT0_vect){
-	// cup is placed onto pressure sensor
-	read_poteniometers();
+void init_ADC()
+{
+	// Select Vref=AVcc
+	ADMUX |= (1<<REFS0);
+	//set prescaller to 128 and enable ADC 
+	ADCSRA |= (1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0)|(1<<ADEN);    
+
 }
 
-void read_poteniometers(){
-	ADCSRA |= (1<<ADSC); // Start conversion
-	while ((ADCSRA & (1<<ADIF)) ==0); // wait for conversion to finish
-	WATER_TEMP = ADCH;
+ISR(INT0_vect){
+	// cup is placed onto pressure sensor
 	monitor_pump();
-
-
 }
 
 void monitor_pump(){
@@ -64,10 +60,41 @@ void monitor_pump(){
 	// monitor the voltage coming from thermocouple
 	// when it's close to WATER_TEMP, make LED green and start pump
 
+	// TODO: Need to figure out how to make ADC from ADC1 because ADC0 is being used by brew_tea()
+
 	brew_tea();
 }
 
 void brew_tea(){
+	ADMUX = 0<<REFS1 | 1<<REFS0 | 1<<ADLAR; 
+
+	ADCSRA |= (1<<ADSC); // Start conversion
+	while ((ADCSRA & (1<<ADIF)) ==0); // wait for conversion to finish
+	TEA_STRENGTH = ADCH;
+	int delay = 0;
+
+	if(TEA_STRENGTH<=50){
+		// 1 min
+		delay = 60000;
+
+	}else if (TEA_STRENGTH<=100){
+		// 2 min
+		delay = 120000;
+
+	}else if (TEA_STRENGTH<=150){
+		// 3 min
+		delay = 180000;
+
+	}else if (TEA_STRENGTH<=200){
+		// 4 min
+		delay = 240000;
+
+	}else{
+		// 5 min
+		delay = 300000;
+
+	}
+
 	OCR0A = 0x00; // Load $00 into OCR0 to set initial duty cycle to 0 (motor off)
 	TCCR0A = 1<<COM0A1 | 1<<COM0A0 | 1<<WGM01 | 1<<WGM00; // Set non‐inverting
 		//mode on OC0A pin (COMA1:0 = 10; Fast PWM (WGM1:0 bits = bits 1:0 = 11) (Note
@@ -77,9 +104,16 @@ void brew_tea(){
 		// PWM is now running on selected pin at selected base frequency. Duty cycle is
 		//set by loading/changing value in OCR0A register.
 
+	OCR0A = 0xFF; // set full duty cycle
+	PORTD = 0<<PORTD0 | 1<<PORTD1; //turn on motor
+	wait(delay, 2); // wait
+	PORTD = 0<<PORTD0 | 0<<PORTD1; // turn off motor
+	OCR0A = 0x00; // clear duty cycle
+
+
 }
 
-void wait(int multiple){
+void wait(volatile int multiple, volatile char time_choice){
 	while (multiple>0){
 		delay_T_msec_timer0(time_choice);
 		multiple--;
