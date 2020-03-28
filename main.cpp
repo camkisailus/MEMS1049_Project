@@ -23,6 +23,10 @@ int main(void) {
 	// define all Port C bits as input
 	DDRC = 0x00; 
 
+	//PORTB output
+	DDRB = DDRB & 00000011;
+
+
 
 	EICRA = 1<<ISC11 | 1<<ISC10 | 1<<ISC01 | 0<<ISC00;
 	EIMSK = 1<<INT1 | 1<<INT0; 
@@ -107,9 +111,9 @@ void brew_tea(){
 		//set by loading/changing value in OCR0A register.
 
 	OCR0A = 0xFF; // set full duty cycle
-	PORTD = 0<<PORTD0 | 1<<PORTD1; //turn on motor
+	PORTB = 1<<PORTB4;
 	wait(delay, 2); // wait
-	PORTD = 0<<PORTD0 | 0<<PORTD1; // turn off motor
+	PORTB = 0<<PORTB4;
 	OCR0A = 0x00; // clear duty cycle
 
 	cue_finish();
